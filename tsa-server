@@ -1,5 +1,20 @@
 #!/bin/bash
-GROOVY=/root/.sdkman/candidates/groovy/current/bin/groovy
-SERVER_PATH=/opt/tsa-0.1/server.groovy
-LOG_FILE=/var/log/tsa.log
-$GROOVY $SERVER_PATH > $LOG_FILE 2>&1 &
+PIDFILE="/tmp/pid"
+
+terminate() {    
+    PID=$(cat /tmp/pid)
+    kill -1 $PID
+    wait $PID
+    rm $PIDFILE
+    exit 0
+}
+
+trap terminate SIGHUP SIGINT SIGQUIT SIGTERM
+
+echo "" > $PIDFILE
+groovy server.groovy | tee /var/log/tsa.log&
+PID=$!
+echo $PID > $PIDFILE
+
+wait $PID
+
